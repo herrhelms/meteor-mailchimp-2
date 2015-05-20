@@ -1,24 +1,19 @@
-var getSettingsValueFor = function ( key ) {
-        if (
-            Meteor.settings &&
-            Meteor.settings.private &&
-            Meteor.settings.private.MailChimp
-        ) {
-            return Meteor.settings.private.MailChimp[key];
+var getSettingsValueFor = function(key) {
+    if (Meteor.settings && Meteor.settings.private && Meteor.settings.private.MailChimp) {
+        return Meteor.settings.private.MailChimp[key];
+    }
+};
+
+MailChimp = function(apiKey, options) {
+    var mailChimpOptions = {
+        'apiKey': apiKey || getSettingsValueFor('apiKey'),
+        'options': options || {
+            'version': '2.0'    // Living on The Edge ;)
         }
     };
 
-MailChimp = function ( apiKey, options ) {
-    var mailChimpOptions = {
-            'apiKey' : apiKey || getSettingsValueFor( 'apiKey' ),
-            'options': options || {
-                'version': '2.0'    // Living on The Edge ;)
-            }
-        };
-
-    if ( !mailChimpOptions.apiKey || mailChimpOptions.apiKey === '' ) {
-
-        console.error( '[MailChimp] Error: No API Key defined!' );
+    if (!mailChimpOptions.apiKey || mailChimpOptions.apiKey === '') {
+        console.error('[MailChimp] Error: No API Key defined!');
 
         throw new Meteor.Error(
             'No API Key',
@@ -27,59 +22,55 @@ MailChimp = function ( apiKey, options ) {
         );
     }
 
-    this._asyncAPI = Npm.require( 'mailchimp' ).MailChimpAPI(
+    this._asyncAPI = Npm.require('mailchimp').MailChimpAPI(
         mailChimpOptions.apiKey,
         mailChimpOptions.options
     );
 };
 
-MailChimp.prototype.call = function ( section, method, options, callback ) {
-    if ( callback && typeof callback === 'function' ) {
+MailChimp.prototype.call = function(section, method, options, callback) {
+    if (callback && typeof callback === 'function') {
         // If anyone still wants to use old-fashioned callback method
-        this._asyncAPI.call( section, method, options, callback );
-    } else {
-        try {
-            var wrapped = Meteor.wrapAsync( this._asyncAPI.call, this._asyncAPI );
-
-            return wrapped( section, method, options );
-        } catch ( error ) {
-            // A workaround for:
-            // https://github.com/meteor/meteor/issues/2774
-            if ( !error.error ) {
-                throw new Meteor.Error( error.code, error.message );
-            } else {
-                throw new Meteor.Error( error );
-            }
+        this._asyncAPI.call(section, method, options, callback);
+    }
+    try {
+        var wrapped = Meteor.wrapAsync( this._asyncAPI.call, this._asyncAPI );
+        return wrapped( section, method, options );
+    }
+    catch (error) {
+        // https://github.com/meteor/meteor/issues/2774
+        if (!error.error) {
+            throw new Meteor.Error(error.code, error.message);
         }
+        throw new Meteor.Error(error);
     }
 };
 
 Meteor.methods({
-    'MailChimp': function ( clientOptions, section, method, options ) {
-        check( clientOptions, Object );
-        check( section, String );
-        check( method, String );
-        check( options, Object );
+    'MailChimp': function(clientOptions, section, method, options) {
+        check(clientOptions, Object );
+        check(section, String );
+        check(method, String );
+        check(options, Object );
 
-        var mailChimp,
-            mailChimpOptions = _.defaults( {}, options );
+        var mailChimp;
+        var mailChimpOptions = _.defaults({}, options);
 
         try {
-            mailChimp = new MailChimp( clientOptions.apiKey, clientOptions.options );
-        } catch ( error ) {
-            throw new Meteor.Error( error.error, error.reason, error.details );
+            mailChimp = new MailChimp(clientOptions.apiKey, clientOptions.options);
+        }
+        catch (error) {
+            throw new Meteor.Error(error.error, error.reason, error.details);
         }
 
-        switch ( section ) {
+        switch (section) {
             case 'lists':
-                if ( !mailChimpOptions.id || mailChimpOptions.id === '' ) {
-                    mailChimpOptions.id = getSettingsValueFor( 'listId' );
+                if (!mailChimpOptions.id || mailChimpOptions.id === '') {
+                    mailChimpOptions.id = getSettingsValueFor( 'listId');
                 }
-
                 break;
             default:
         }
-
-        return mailChimp.call( section, method, mailChimpOptions );
+        return mailChimp.call(section, method, mailChimpOptions);
     }
 });
