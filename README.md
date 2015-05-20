@@ -8,7 +8,9 @@ Once ready, you will be able to find it on [atmospherejs.com](https://atmosphere
 ### Foreword
 
 This package is based on [miro:mailchimp](https://github.com/MiroHibler/meteor-mailchimp/tree/v0.4.2) but I needed some extras, so therefore I repacked and concentrated upon a custom subscribers sign-up form.
-It is styled in a bootstrap manner even though just the tiny important bits of the bootstrap.css necessary for the form are added. Hope this will help if you need a fast direct signup form with email validation on a landing page of yours.
+It is styled in a bootstrap manner even though just the tiny important bits of the bootstrap.css necessary for the form are added.
+
+Hope this will help if you need a fast direct signup form with email validation that works out of the box.
 
 
 ### what's inside
