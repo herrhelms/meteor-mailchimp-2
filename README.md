@@ -17,7 +17,7 @@ Please feel free to add issues, fork, comment or extend...
 
 ### what's inside
 
-A sign-up form that skips the default double_optin. Insert it anywhere in your template with `{{> MailChimpListSubscribe}}`
+A sign-up form that skips the default double_optin.<br>Insert it anywhere in your template with `{{> MailChimpListSubscribe}}`
 
 ### usage
 
