@@ -14,7 +14,6 @@ MailChimp = function(apiKey, options) {
 
     if (!mailChimpOptions.apiKey || mailChimpOptions.apiKey === '') {
         console.error('[MailChimp] Error: No API Key defined!');
-
         throw new Meteor.Error(
             'No API Key',
             'No API Key defined',
@@ -34,8 +33,8 @@ MailChimp.prototype.call = function(section, method, options, callback) {
         this._asyncAPI.call(section, method, options, callback);
     }
     try {
-        var wrapped = Meteor.wrapAsync( this._asyncAPI.call, this._asyncAPI );
-        return wrapped( section, method, options );
+        var wrapped = Meteor.wrapAsync(this._asyncAPI.call, this._asyncAPI);
+        return wrapped(section, method, options);
     }
     catch (error) {
         // https://github.com/meteor/meteor/issues/2774
@@ -48,10 +47,10 @@ MailChimp.prototype.call = function(section, method, options, callback) {
 
 Meteor.methods({
     'MailChimp': function(clientOptions, section, method, options) {
-        check(clientOptions, Object );
-        check(section, String );
-        check(method, String );
-        check(options, Object );
+        check(clientOptions, Object);
+        check(section, String);
+        check(method, String);
+        check(options, Object);
 
         var mailChimp;
         var mailChimpOptions = _.defaults({}, options);
@@ -66,7 +65,7 @@ Meteor.methods({
         switch (section) {
             case 'lists':
                 if (!mailChimpOptions.id || mailChimpOptions.id === '') {
-                    mailChimpOptions.id = getSettingsValueFor( 'listId');
+                    mailChimpOptions.id = getSettingsValueFor('listId');
                 }
                 break;
             default:

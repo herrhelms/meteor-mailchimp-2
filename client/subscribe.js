@@ -1,149 +1,153 @@
-var subscribeMessage = 'Get on the mailing list:';
-var subscribeInvalidEmail = 'Invalid email address :(';
-var subscribeSubscribing = 'Subscribing...';
-var subscribeSuccess = 'Check your inbox! :)';
-var subscribeAlreadySubscribed = 'Already subscribed! O.o';
+var subscribeMessage = '&nbsp;';
+var subscribeLooksGoodMessage = 'This email address looks great! Press enter key or tab the button';
+var subscribeInvalidEmail = 'Enter a valid email address.';
+var subscribeSubscribing = 'Adding your email to the subscription list.';
+var subscribeSuccess = 'You have successfully subscribed. We\'ll send a welcome mail';
+var subscribeAlreadySubscribed = 'This email is already on the list. Good for you!';
 
 var subscribeTitle;
 var subscribeEmail;
 var subscribeButton;
 
-var showMessage = function ( message ) {
-    if ( subscribeTitle ) {
+var showMessage = function(message) {
+    if (subscribeTitle) {
         subscribeTitle.innerHTML = message;
     }
-},
+};
 
-var isValidEmailAddress = function ( emailAddress ) {
+Session.setDefault('MCicon', 'record');
+
+
+var isValidEmailAddress = function(emailAddress) {
     // http://stackoverflow.com/a/46181/11236
     var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test( emailAddress );
-},
+    return re.test(emailAddress);
+};
 
-validateEmailAddress = function ( updateMessage ) {
-    if ( subscribeEmail.value !== '' && isValidEmailAddress( subscribeEmail.value ) ) {
+var validateEmailAddress = function(updateMessage) {
+    if (subscribeEmail.value !== '' && isValidEmailAddress(subscribeEmail.value)) {
         subscribeButton.disabled = false;
-
-        if ( updateMessage ) {
-            showMessage( subscribeMessage );
+        Session.set('MCicon', 'ok-circle');
+        if (updateMessage) {
+            showMessage(subscribeLooksGoodMessage);
         }
     } else {
         subscribeButton.disabled = true;
-
-        if ( subscribeEmail.value !== '' ) {
-            showMessage( subscribeInvalidEmail );
-        } else if ( updateMessage ) {
-            showMessage( subscribeMessage );
+        if (subscribeEmail.value !== '') {
+            Session.set('MCicon', 'remove-circle');
+            showMessage(subscribeInvalidEmail);
+        } else if (updateMessage) {
+            Session.set('MCicon', 'record');
+            showMessage(subscribeMessage);
         }
     }
-},
+};
 
-mailChimpListSubscribe = function ( email, list_id ) {
+var mailChimpListSubscribe = function(email, list_id) {
     var mailChimp = new MailChimp(/* apiKey, options */);
-
-    mailChimp.call( 'lists', 'subscribe',
+    console.log('mailChimp found');
+    mailChimp.call('lists', 'subscribe',
         {
-            id   : list_id,        // null -> defined @ server
+            id: list_id,        // null -> defined @ server
             email: {
                 email: email
-            }
+            },
+            merge_vars: {
+                double_optin: false
+            },
+            double_optin: false,
+            send_welcome: true
         },
 
-        function ( error, result ) {
-            if ( error ) {
-                switch ( error.error ) {
+        function(error, result) {
+            if (error) {
+                switch (error.error) {
                     case 232:    // 'Email_NotExists'
-                        showMessage( subscribeInvalidEmail );
+                        showMessage(subscribeInvalidEmail);
                         break;
                     case 214:    // 'List_AlreadySubscribed'
-                        showMessage( subscribeAlreadySubscribed );
+                        showMessage(subscribeAlreadySubscribed);
+                        subscribeEmail.value = '';
                         break;
-                    case 200:    // 'List_DoesNotExist'
-                        // We shouldn't be here!
-                        // Oh, well, continue to default...
                     default:
-                        showMessage( 'Error: ' + error.reason );
+                        showMessage('Error: ' + error.reason);
                 }
 
-                console.error( '[MailChimp][Subscribe] Error: %o', error );
-
+                console.error('[MailChimp][Subscribe] Error: %o', error);
             } else {
-
-                console.info( '[MailChimp][Subscribe] Yo, ' + subscribeEmail.value + ', ' + subscribeSuccess );
-                console.info( '[MailChimp][Subscribe] Subscriber: %o', result );
-
-                showMessage( subscribeSuccess );
+                showMessage(subscribeSuccess);
             }
-
             subscribeEmail.disabled = false;
-            validateEmailAddress( false );
+            validateEmailAddress(false);
         }
-    );
-},
+   );
+};
 
-subscribeGo = function ( eventBubbling ) {
-    subscribeEmail.disabled  = true;
+var subscribeGo = function(eventBubbling) {
+    subscribeEmail.disabled = true;
     subscribeButton.disabled = true;
-
-    showMessage( subscribeSubscribing );
-
-    mailChimpListSubscribe( subscribeEmail.value );
-
-    // Prevent Event Bubbling
+    showMessage(subscribeSubscribing);
+    mailChimpListSubscribe(subscribeEmail.value);
     return eventBubbling;
 };
 
-Template.MailChimpListSubscribe.rendered = function () {
-    subscribeTitle  = this.find( '.message' );
-    subscribeEmail  = this.find( '.email' );
-    subscribeButton = this.find( '.subscribe' );
-    subscribeButton.disabled = ( subscribeEmail.value === '' );
+Template.MailChimpListSubscribe.rendered = function() {
+    subscribeTitle = this.find('#mc-message');
+    subscribeEmail = this.find('#mc-email');
+    subscribeButton = this.find('#mc-button');
+    subscribeButton.disabled = (subscribeEmail.value === '');
 };
 
 Template.MailChimpListSubscribe.helpers({
     message: function() {
         subscribeMessage = this.title || subscribeMessage;
         return subscribeMessage;
+    },
+    indicator: function() {
+        return Session.get('MCicon');
     }
 });
 
 Template.MailChimpListSubscribe.events({
-    'focus .email, paste .email, cut .email': function ( e ) {
-        setTimeout( function ( e ) {
-            validateEmailAddress( true );
-        }, 0 );
+    'focus .email, paste .email, cut .email': function(e) {
+        setTimeout(function(e) {
+            validateEmailAddress(true);
+        }, 0);
     },
-
-    'keyup .email': function ( e ) {
+    'keyup .email': function(e) {
         var key = e.which || e.keyCode || e.charCode;
-
-        if (
-            key === 8 ||                // [Backspace]
-            key === 46                    // [Delete]
-        ) {
-            setTimeout( function () {
-                validateEmailAddress( true );
-            }, 0 );
+        if (key === 8 || key === 46) {
+            setTimeout(function() {
+                validateEmailAddress(true);
+            }, 0);
         }
     },
-
-    'keypress .email': function ( e ) {
+    'submit form': function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    },
+    'blur .email': function(e) {
+        if (subscribeEmail.value === '') {
+            Session.set('MCicon', 'record');
+            showMessage(subscribeMessage);
+        }
+    },
+    'keypress .email': function(e) {
         var key = e.which || e.keyCode || e.charCode;
-
-        setTimeout( function () {
-            validateEmailAddress( true );
-            if ( isValidEmailAddress( subscribeEmail.value  ) ) {
-                if ( key === 13    ) {        // [Return]
-                    subscribeGo( true );
+        setTimeout(function() {
+            validateEmailAddress(true);
+            if (isValidEmailAddress(subscribeEmail.value)) {
+                if (key === 13) {        // [Return]
+                    subscribeGo(false);
                 }
             }
-        }, 0 );
+        }, 0);
     },
-
-    'click .subscribe': function ( e ) {
-        validateEmailAddress( true );
-        if ( isValidEmailAddress( subscribeEmail.value  ) ) {
-            subscribeGo( false );
+    'click .subscribe': function(e) {
+        validateEmailAddress(true);
+        if (isValidEmailAddress(subscribeEmail.value)) {
+            subscribeGo(false);
         }
     }
 });

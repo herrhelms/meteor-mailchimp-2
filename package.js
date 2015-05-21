@@ -10,8 +10,8 @@ Npm.depends({'mailchimp': '1.1.0'});
 
 Package.onUse(function(api, where) {
     api.versionsFrom('1.1.0.2');
-    api.use(['templating'], 'client');
-    api.addFiles( 'lib/server/mailchimp.js', 'server');
+    api.use(['templating', 'session'], 'client');
+    api.addFiles( 'server/mailchimp.js', 'server');
     api.addFiles(['client/subscribe.css', 'client/subscribe.html', 'client/subscribe.js', 'client/mailchimp.js'], 'client');
     api.export('MailChimp', ['server', 'client']);
 });
